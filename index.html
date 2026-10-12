@@ -113,12 +113,30 @@
       margin-top: 16px;
     }
 
-    .id-label {
-      font-size: 14px;
+    .name-label {
+      font-size: 18px;
       font-weight: 700;
-      color: #1c1c1e;
-      letter-spacing: 2px;
-      margin-top: 12px;
+      color: #000000;
+      margin-top: 14px;
+    }
+
+    .email-label {
+      font-size: 13px;
+      color: #8e8e93;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .id-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3a3a3c;
+      letter-spacing: 1px;
+      background: #f2f2f7;
+      padding: 6px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-top: 8px;
     }
 
     #error-msg {
@@ -150,8 +168,13 @@
       <h1>Event Pass</h1>
       <p>Screenshot this ticket for check-in</p>
       
+      <div class="name-label" id="name-display"></div>
+      <div class="email-label" id="email-display"></div>
+      
       <canvas id="barcode-canvas"></canvas>
-      <div class="id-label" id="id-display"></div>
+      <div>
+        <span class="id-label" id="id-display"></span>
+      </div>
 
       <button class="btn-reload" onclick="resetForm()">Search Another ID</button>
     </div>
@@ -185,7 +208,7 @@
       cleanup(callbackName);
 
       if (data && data.success) {
-        renderBarcode(data.id || idInput);
+        renderPass(data, idInput);
       } else {
         showError((data && data.message) ? data.message : "ID not found.");
       }
@@ -193,7 +216,7 @@
 
     const script = document.createElement('script');
     script.id = callbackName;
-    script.async = true; // Makes network loading faster and non-blocking
+    script.async = true;
     script.src = `${API_URL}?id=${encodeURIComponent(idInput)}&callback=${callbackName}`;
     script.onerror = function() {
       cleanup(callbackName);
@@ -213,10 +236,14 @@
     if (scriptTag) scriptTag.remove();
   }
 
-  function renderBarcode(id) {
+  function renderPass(data, fallbackId) {
     document.getElementById('search-container').style.display = "none";
     document.getElementById('pass-container').style.display = "block";
-    document.getElementById('id-display').innerText = id;
+    
+    const id = data.id || fallbackId;
+    document.getElementById('id-display').innerText = `ID: ${id}`;
+    document.getElementById('name-display').innerText = data.name || "Attendee";
+    document.getElementById('email-display').innerText = data.email || "";
 
     try {
       bwipjs.toCanvas('barcode-canvas', {

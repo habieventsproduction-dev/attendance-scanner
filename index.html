@@ -70,7 +70,7 @@
       background: #ffffff;
     }
 
-    .btn-submit {
+    .btn-submit, .btn-reload {
       width: 100%;
       background: #000000;
       color: #ffffff;
@@ -83,7 +83,13 @@
       transition: opacity 0.15s ease;
     }
 
-    .btn-submit:active {
+    .btn-reload {
+      margin-top: 24px;
+      background: #f2f2f7;
+      color: #000000;
+    }
+
+    .btn-submit:active, .btn-reload:active {
       opacity: 0.8;
     }
 
@@ -132,7 +138,7 @@
       <p>Enter ID number below to generate event barcode ticket.</p>
 
       <div class="input-group">
-        <input type="text" id="id-input" placeholder="Enter ID Number" required autocomplete="off">
+        <input type="text" id="id-input" placeholder="Enter ID Number" required autocomplete="off" onkeydown="if(event.key === 'Enter') fetchPass()">
       </div>
       
       <button class="btn-submit" id="submit-btn" onclick="fetchPass()">View Barcode Pass</button>
@@ -146,6 +152,8 @@
       
       <canvas id="barcode-canvas"></canvas>
       <div class="id-label" id="id-display"></div>
+
+      <button class="btn-reload" onclick="resetForm()">Search Another ID</button>
     </div>
   </div>
 
@@ -176,17 +184,16 @@
     window[callbackName] = function(data) {
       cleanup(callbackName);
 
-      // VERIFY FIRST: Only generate barcode IF registration ID exists in backend
       if (data && data.success) {
         renderBarcode(data.id || idInput);
       } else {
-        // ID not found or error returned from server
         showError((data && data.message) ? data.message : "ID not found.");
       }
     };
 
     const script = document.createElement('script');
     script.id = callbackName;
+    script.async = true; // Makes network loading faster and non-blocking
     script.src = `${API_URL}?id=${encodeURIComponent(idInput)}&callback=${callbackName}`;
     script.onerror = function() {
       cleanup(callbackName);
@@ -207,15 +214,9 @@
   }
 
   function renderBarcode(id) {
-    // Hide search form and display pass card
     document.getElementById('search-container').style.display = "none";
     document.getElementById('pass-container').style.display = "block";
     document.getElementById('id-display').innerText = id;
-
-    // Clear any existing barcode canvas content
-    const canvas = document.getElementById('barcode-canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     try {
       bwipjs.toCanvas('barcode-canvas', {
@@ -229,6 +230,15 @@
       console.error("Barcode Generation Error:", e);
       showError("Error rendering barcode image.");
     }
+  }
+
+  function resetForm() {
+    document.getElementById('pass-container').style.display = "none";
+    document.getElementById('search-container').style.display = "block";
+    const inputField = document.getElementById('id-input');
+    inputField.value = "";
+    inputField.focus();
+    document.getElementById('error-msg').style.display = "none";
   }
 
   function showError(msg) {
